@@ -1,4 +1,4 @@
-package com.example.navitest
+package com.example.levelup
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,4 +1,4 @@
-package com.example.navitest
+package com.example.levelup
 
 import org.junit.Test
 
