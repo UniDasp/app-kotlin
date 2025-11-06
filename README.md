@@ -50,7 +50,6 @@ Los precios están en pesos chilenos para que no te confundas.
 - Kotlin (obvio)
 - Jetpack Compose para la interfaz
 - Material Design 3 para que se vea bonito
-- Coil para cargar las imágenes
 - Un montón de librerías de Android que son medio complicadas de explicar
 
 **Versiones y eso:**
