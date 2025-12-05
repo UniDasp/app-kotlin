@@ -1,40 +1,36 @@
 package com.example.navitest.model
 
-import androidx.compose.runtime.mutableStateListOf
-
 data class CartItem(
-    val product: Product,
-    var quantity: Int = 1
-)
+    val itemId: String,          
+    val id: Int,                 
+    val productId: Int,          
+    val name: String,
+    val image: String,
+    val price: Double,
+    val quantity: Int,
+    val stock: Int,
+    val sku: String? = null,     
+    
+    val originalPrice: Double? = null,
+    val discountedPrice: Double? = null,
+    val discountPercentage: Double? = null,
+    val activeDealId: Int? = null,
+    val activeDealName: String? = null
+) {
+    
+    val hasActiveDiscount: Boolean
+        get() = discountedPrice != null && discountedPrice!! > 0 && discountPercentage != null && discountPercentage!! > 0
 
-object CartRepository {
-    private val _items = mutableStateListOf<CartItem>()
-    val items: List<CartItem> get() = _items
+    
+    val finalPrice: Double
+        get() = if (hasActiveDiscount) discountedPrice!! else price
 
-    fun add(product: Product) {
-        val existing = _items.find { it.product.id == product.id }
-        if (existing != null) {
-            existing.quantity += 1
-        } else {
-            _items.add(CartItem(product))
-        }
-    }
+    
+    val savingsPerItem: Double
+        get() = if (hasActiveDiscount && originalPrice != null && discountedPrice != null) originalPrice - discountedPrice!! else 0.0
 
-    fun remove(product: Product) {
-        val existing = _items.find { it.product.id == product.id }
-        if (existing != null) {
-            _items.remove(existing)
-        }
-    }
-
-    fun updateQuantity(product: Product, qty: Int) {
-        val existing = _items.find { it.product.id == product.id }
-        if (existing != null) {
-            if (qty <= 0) _items.remove(existing) else existing.quantity = qty
-        }
-    }
-
-    fun clear() {
-        _items.clear()
-    }
+    
+    val totalSavings: Double
+        get() = savingsPerItem * quantity
 }
+

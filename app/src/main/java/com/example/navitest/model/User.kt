@@ -1,61 +1,42 @@
 package com.example.navitest.model
 
+import com.google.gson.annotations.SerializedName
+
 data class User(
     val id: Int,
-    val username: String,
+    val username: String? = null,
+    
+    @SerializedName("firstName")
+    val nombre: String? = null,
+    
+    @SerializedName("lastName")
+    val apellido: String? = null,
+    
     val email: String,
-    val role: UserRole,
-    val password: String
-)
-
-enum class UserRole {
-    USER,
-    ADMIN
-}
-
-object UserRepository {
-    val users = listOf(
-        User(
-            id = 1,
-            username = "diego",
-            email = "diego@levelup.com",
-            role = UserRole.USER,
-            password = "password123"
-        ),
-        User(
-            id = 2,
-            username = "pablo",
-            email = "pablo@levelup.com",
-            role = UserRole.USER,
-            password = "password123"
-        ),
-        User(
-            id = 3,
-            username = "diego_admin",
-            email = "diego.admin@levelup.com",
-            role = UserRole.ADMIN,
-            password = "adminpass"
-        ),
-        User(
-            id = 4,
-            username = "pablo_admin",
-            email = "pablo.admin@levelup.com",
-            role = UserRole.ADMIN,
-            password = "adminpass"
-        ),
-        User(
-            id = 5,
-            username = "diego_duoc",
-            email = "diego@duocuc.cl",
-            role = UserRole.USER,
-            password = "duocpass"
-        ),
-        User(
-            id = 6,
-            username = "pablo_duoc",
-            email = "pablo@duocuc.cl",
-            role = UserRole.USER,
-            password = "duocpass"
-        )
-    )
+    
+    @SerializedName("phone")
+    val telefono: String? = null,
+    
+    @SerializedName("address")
+    val direccion: String? = null,
+    
+    val region: String? = null,
+    
+    @SerializedName("city")
+    val ciudad: String? = null,
+    
+    @SerializedName("roles")
+    val roles: List<String>? = null,
+    
+    @SerializedName("enabled")
+    val activo: Boolean = true,
+    
+    val createdAt: String? = null,
+    val updatedAt: String? = null
+) {
+    val fullName: String
+        get() = "${nombre ?: ""} ${apellido ?: ""}".trim()
+    
+    val rol: String
+        get() = roles?.firstOrNull()?.removePrefix("ROLE_") ?: "USER"
 }

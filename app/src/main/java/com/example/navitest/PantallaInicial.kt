@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import com.example.navitest.pages.HomePage
 import com.example.navitest.pages.NotificationsPage
 import com.example.navitest.pages.SearchPage
-import com.example.navitest.pages.SettingsPage
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,7 +85,7 @@ fun PantallaInicial() {
             onDismissRequest = { showCartDialog = false },
             title = { Text("Carrito") },
             text = {
-                com.example.navitest.pages.CartPage(modifier = Modifier.fillMaxSize())
+                Text("Función de carrito no disponible en esta versión. Usa PantallaInicialWithViewModels.")
             },
             confirmButton = {
                 TextButton(onClick = { showCartDialog = false }) { Text("Cerrar") }
@@ -98,9 +97,9 @@ fun PantallaInicial() {
 @Composable
 fun ContenidoPantalla(modifier: Modifier = Modifier, selectedIndex: Int) {
     when(selectedIndex){
-        0 -> HomePage(modifier = modifier)
-        1 -> SearchPage(modifier = modifier)
+        0 -> Text("Home - Use PantallaInicialWithViewModels instead")
+        1 -> Text("Products - Use PantallaInicialWithViewModels instead")
         2 -> NotificationsPage(modifier = modifier)
-        3 -> SettingsPage(modifier = modifier)
+        3 -> Text("Account - Use PantallaInicialWithViewModels instead")
     }
 }

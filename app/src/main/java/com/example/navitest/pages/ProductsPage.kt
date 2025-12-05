@@ -27,28 +27,39 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.FilterChip
 import coil.compose.AsyncImage
-import com.example.navitest.model.ProductRepository
-import com.example.navitest.model.ProductCategory
-import com.example.navitest.model.RecentRepository
 import com.example.navitest.utils.toCLP
+import com.example.navitest.viewmodel.ProductsViewModel
+import com.example.navitest.viewmodel.CartViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchPage(modifier: Modifier = Modifier) {
+fun SearchPage(
+    modifier: Modifier = Modifier,
+    productsViewModel: ProductsViewModel,
+    cartViewModel: CartViewModel
+) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf<ProductCategory?>(null) }
+    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
     var showProductDialog by remember { mutableStateOf<com.example.navitest.model.Product?>(null) }
 
-    val filters = ProductCategory.values().toList()
-    val products = remember { ProductRepository.products }
-    
-    var selectedFeaturedProductIndex by remember { mutableStateOf(0) }
-    val featuredProducts = remember { products.filter { it.featured } }
-    
-    LaunchedEffect(Unit) {
-        while (true) {
-            kotlinx.coroutines.delay(5000)
-            selectedFeaturedProductIndex = (selectedFeaturedProductIndex + 1) % featuredProducts.size
+    val categories by productsViewModel.categories.collectAsState()
+    val allProducts by productsViewModel.allProducts.collectAsState()
+    val isLoading = productsViewModel.isLoading
+    val errorMessage = productsViewModel.errorMessage
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank()) {
+            productsViewModel.searchProducts(searchQuery)
+        } else if (selectedCategoryId == null) {
+            productsViewModel.loadProducts()
+        }
+    }
+
+    LaunchedEffect(selectedCategoryId) {
+        if (selectedCategoryId != null) {
+            productsViewModel.filterByCategoryId(selectedCategoryId)
+        } else if (searchQuery.isBlank()) {
+            productsViewModel.loadProducts()
         }
     }
 
@@ -60,7 +71,7 @@ fun SearchPage(modifier: Modifier = Modifier) {
         SearchBar(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
-            onSearch = { },
+            onSearch = { productsViewModel.searchProducts(searchQuery) },
             active = false,
             onActiveChange = { },
             placeholder = { Text("Buscar productos...") },
@@ -76,34 +87,18 @@ fun SearchPage(modifier: Modifier = Modifier) {
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            filters.forEach { category ->
+            categories.forEach { category ->
                 FilterChip(
-                    selected = selectedFilter == category,
+                    selected = selectedCategoryId == category.id,
                     onClick = {
-                        selectedFilter = if (selectedFilter == category) null else category
+                        selectedCategoryId = if (selectedCategoryId == category.id) null else category.id
                     },
                     label = {
                         Text(
-                            text = category.displayName,
+                            text = category.nombre,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    },
-                    shape = when (filters.indexOf(category)) {
-                        0 -> MaterialTheme.shapes.extraLarge.copy(
-                            topEnd = CornerSize(0.dp),
-                            bottomEnd = CornerSize(0.dp)
-                        )
-                        filters.lastIndex -> MaterialTheme.shapes.extraLarge.copy(
-                            topStart = CornerSize(0.dp),
-                            bottomStart = CornerSize(0.dp)
-                        )
-                        else -> MaterialTheme.shapes.extraLarge.copy(
-                            topStart = CornerSize(0.dp),
-                            bottomStart = CornerSize(0.dp),
-                            topEnd = CornerSize(0.dp),
-                            bottomEnd = CornerSize(0.dp)
                         )
                     }
                 )
@@ -112,95 +107,54 @@ fun SearchPage(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val filteredProducts = products.filter {
-                (selectedFilter == null || it.category == selectedFilter) &&
-                (it.name.contains(searchQuery, ignoreCase = true) || searchQuery.isEmpty())
+        
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-            
-            items(filteredProducts) { product ->
-                Card(
+        } else if (errorMessage != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Text(text = errorMessage, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+        } else if (allProducts.isEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showProductDialog = product; RecentRepository.add(product) },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    ) {
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                AsyncImage(
-                                    model = product.image,
-                                    contentDescription = product.name,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-
-                                if (product.featured) {
-                                    Surface(
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .align(Alignment.TopEnd),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = MaterialTheme.shapes.small
-                                    ) {
-                                        Text(
-                                            "Destacado",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = product.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        
-                        Text(
-                            text = product.price.toCLP(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        
-                        Text(
-                            text = product.category.displayName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = product.category.color,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        
-                                FilledTonalButton(
-                                    onClick = { showProductDialog = product; RecentRepository.add(product) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp)
-                                ) {
-                                    Text("Ver detalles")
-                                }
-                    }
+                    Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("No se encontraron productos", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Intenta otra búsqueda o vuelve más tarde.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(allProducts) { product ->
+                    com.example.navitest.components.ProductCard(
+                        product = product,
+                        onClick = { showProductDialog = product }
+                    )
                 }
             }
         }
@@ -244,10 +198,9 @@ fun SearchPage(modifier: Modifier = Modifier) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = showProductDialog!!.price.toCLP(),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary
+                            com.example.navitest.components.ProductPrice(
+                                product = showProductDialog!!,
+                                showDealName = true
                             )
                             
                             if (showProductDialog!!.featured) {
@@ -266,12 +219,12 @@ fun SearchPage(modifier: Modifier = Modifier) {
                         }
                         
                         ListItem(
-                            headlineContent = { Text(showProductDialog!!.category.displayName) },
-                            leadingContent = { 
+                            headlineContent = { Text(showProductDialog!!.categoryName) },
+                            leadingContent = {
                                 Surface(
                                     modifier = Modifier.size(32.dp),
                                     shape = MaterialTheme.shapes.small,
-                                    color = showProductDialog!!.category.color.copy(alpha = 0.2f)
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                 ) {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
@@ -280,7 +233,7 @@ fun SearchPage(modifier: Modifier = Modifier) {
                                         Icon(
                                             Icons.Default.ShoppingCart,
                                             contentDescription = null,
-                                            tint = showProductDialog!!.category.color
+                                            tint = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
@@ -297,13 +250,6 @@ fun SearchPage(modifier: Modifier = Modifier) {
                             showProductDialog!!.description,
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        
-                        ListItem(
-                            headlineContent = { Text("SKU: ${showProductDialog!!.code}") },
-                            colors = ListItemDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
                     }
                 },
                 confirmButton = {
@@ -316,7 +262,7 @@ fun SearchPage(modifier: Modifier = Modifier) {
                 },
                 dismissButton = {
                     FilledTonalButton(onClick = {
-                        showProductDialog?.let { com.example.navitest.model.CartRepository.add(it) }
+                        showProductDialog?.let { cartViewModel.addItem(it) }
                         showProductDialog = null
                     }) {
                         Text("Agregar al carrito")

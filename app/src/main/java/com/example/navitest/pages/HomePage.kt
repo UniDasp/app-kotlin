@@ -15,9 +15,6 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
-import com.example.navitest.model.RecentRepository
-import com.example.navitest.model.ProductRepository
-import com.example.navitest.model.CartRepository
 import com.example.navitest.utils.toCLP
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -26,11 +23,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.example.navitest.viewmodel.ProductsViewModel
+import com.example.navitest.viewmodel.CartViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage(modifier: Modifier = Modifier) {
+fun HomePage(
+    modifier: Modifier = Modifier,
+    productsViewModel: ProductsViewModel,
+    cartViewModel: CartViewModel
+) {
     var showProductDialog by remember { mutableStateOf<com.example.navitest.model.Product?>(null) }
+    val featuredProducts by productsViewModel.featuredProducts.collectAsState()
+    val allProducts by productsViewModel.allProducts.collectAsState()
+    val isLoading = productsViewModel.isLoading
+    val errorMessage = productsViewModel.errorMessage
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -38,7 +46,7 @@ fun HomePage(modifier: Modifier = Modifier) {
             .padding(16.dp)
     ) {
         Text(
-            text = "Bienvenido",
+            text = "Bienvenido a Level Up",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -84,6 +92,29 @@ fun HomePage(modifier: Modifier = Modifier) {
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        
+        com.example.navitest.components.DealsCarousel(
+            onDealClick = { deal ->
+                
+                when (deal.type) {
+                    com.example.navitest.model.DealType.ALL -> {
+                        
+                        productsViewModel.loadProducts()
+                    }
+                    com.example.navitest.model.DealType.CATEGORY -> {
+                        
+                    }
+                    com.example.navitest.model.DealType.SPECIFIC_PRODUCT -> {
+                        
+                    }
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
     if (showProductDialog != null) {
         AlertDialog(
             onDismissRequest = { showProductDialog = null },
@@ -120,19 +151,13 @@ fun HomePage(modifier: Modifier = Modifier) {
                                     fontWeight = FontWeight.Bold
                                 )
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = showProductDialog!!.price.toCLP(),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                
+                                com.example.navitest.components.ProductPrice(
+                                    product = showProductDialog!!,
+                                    showDealName = true
+                                )
 
                                 Text(
                                     "Descripción",
@@ -153,7 +178,7 @@ fun HomePage(modifier: Modifier = Modifier) {
             },
             dismissButton = {
                 FilledTonalButton(onClick = {
-                    showProductDialog?.let { CartRepository.add(it) }
+                    showProductDialog?.let { cartViewModel.addItem(it) }
                     showProductDialog = null
                 }) {
                     Text("Agregar al carrito")
@@ -162,102 +187,42 @@ fun HomePage(modifier: Modifier = Modifier) {
         )
     }
 
-        // Vistos recientemente (solo aparece si hay items en RecentRepository) xd
-        val recent = RecentRepository.items
-        if (recent.isNotEmpty()) {
-            Text(
-                "Vistos recientemente",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+        
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                items(recent) { p ->
-                    ListItem(
-                        headlineContent = { Text(p.name) },
-                        supportingContent = { Text(p.price.toCLP()) },
-                        leadingContent = {
-                            AsyncImage(
-                                model = p.image,
-                                contentDescription = p.name,
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(MaterialTheme.shapes.small),
-                                contentScale = ContentScale.Crop,
-                                placeholder = ColorPainter(Color(0xFFECEFF1)),
-                                error = ColorPainter(Color(0xFFCFD8DC))
-                            )
-                        },
-                        modifier = Modifier.clickable {
-
-                            showProductDialog = p
-                            RecentRepository.add(p)
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-        Text(
-            "Categorías Populares",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        val categories = listOf(
-            Triple("Consolas","Consolas","https://i.imgur.com/Ceu19Yq.jpeg"),
-            Triple("Accesorios","Accesorios","https://i.imgur.com/BdFEBnx.jpeg"),
-            Triple("Computadores Gamers","Computadores Gamers","https://i.imgur.com/4Szrfso.png"),
-            Triple("Juegos de Mesa","Juegos de Mesa","https://i.imgur.com/VrC741p.jpeg")
-        )
-
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(categories) { cat ->
-                ElevatedCard(
-                    modifier = Modifier.width(160.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AsyncImage(
-                            model = cat.third,
-                            contentDescription = cat.first,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .clip(MaterialTheme.shapes.small),
-                            contentScale = ContentScale.Crop,
-                            placeholder = ColorPainter(Color(0xFFF5F5F5)),
-                            error = ColorPainter(Color(0xFFEEEEEE))
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = cat.second,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
+                CircularProgressIndicator()
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        
+        if (errorMessage != null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = errorMessage,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
 
-        val featuredProducts = remember { ProductRepository.products.filter { it.featured } }
-        if (featuredProducts.isNotEmpty()) {
+        
+        if (!isLoading && featuredProducts.isNotEmpty()) {
             Text(
-                "Destacados",
+                "Productos Destacados",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
             )
 
             LazyRow(
@@ -265,35 +230,73 @@ fun HomePage(modifier: Modifier = Modifier) {
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 items(featuredProducts) { p ->
-                    ElevatedCard(
-                        modifier = Modifier
-                            .width(200.dp)
-                            .clickable {
-                                showProductDialog = p
-                                RecentRepository.add(p)
-                            }
-                    ) {
-                        Column(modifier = Modifier.padding(8.dp)) {
-                            AsyncImage(
-                                model = p.image,
-                                contentDescription = p.name,
-                                modifier = Modifier
-                                    .height(110.dp)
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.small),
-                                contentScale = ContentScale.Crop,
-                                placeholder = ColorPainter(Color(0xFFF5F5F5)),
-                                error = ColorPainter(Color(0xFFEEEEEE))
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(p.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                            Text(p.price.toCLP(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
+                    com.example.navitest.components.ProductCard(
+                        product = p,
+                        onClick = { showProductDialog = p }
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+        
+        
+        if (!isLoading && allProducts.isNotEmpty()) {
+            Text(
+                "Todos los Productos",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(allProducts.take(10)) { p ->
+                com.example.navitest.components.ProductCard(
+                    product = p,
+                    onClick = { showProductDialog = p }
+                )
+            }
+        }
+        }
+
+        
+        if (!isLoading && allProducts.isEmpty() && errorMessage == null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "No hay productos disponibles",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Vuelve más tarde para ver nuevos productos",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
