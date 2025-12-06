@@ -1,6 +1,5 @@
 package com.example.navitest.api
 
-import com.example.navitest.model.Product
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -11,9 +10,10 @@ import org.junit.Test
 import org.junit.Assert.*
 import retrofit2.Response
 
- 
+
 @OptIn(ExperimentalCoroutinesApi::class)
-class ProductsRepositoryTest {
+class
+ProductsRepositoryTest {
 
     private lateinit var repository: ProductsRepository
     private lateinit var mockApiService: ApiService

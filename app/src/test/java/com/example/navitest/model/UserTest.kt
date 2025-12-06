@@ -3,8 +3,9 @@ package com.example.navitest.model
 import org.junit.Test
 import org.junit.Assert.*
 
- 
-class UserTest {
+
+class
+UserTest {
 
     @Test
     fun `fullName concatena nombre y apellido correctamente`() {

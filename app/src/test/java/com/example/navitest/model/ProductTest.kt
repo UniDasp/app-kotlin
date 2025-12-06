@@ -3,8 +3,9 @@ package com.example.navitest.model
 import org.junit.Test
 import org.junit.Assert.*
 
- 
-class ProductTest {
+
+class
+ProductTest {
 
     @Test
     fun `categoryName retorna category cuando esta disponible`() {

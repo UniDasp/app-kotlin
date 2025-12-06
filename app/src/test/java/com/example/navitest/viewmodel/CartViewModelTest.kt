@@ -27,6 +27,17 @@ class CartViewModelTest {
     @get:Rule
     val instantExecutorRule = InstantTaskExecutorRule()
 
+    @get:Rule
+    val mainDispatcherRule = object : org.junit.rules.TestWatcher() {
+        val testDispatcher = UnconfinedTestDispatcher()
+        override fun starting(description: org.junit.runner.Description) {
+            Dispatchers.setMain(testDispatcher)
+        }
+        override fun finished(description: org.junit.runner.Description) {
+            Dispatchers.resetMain()
+        }
+    }
+
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var viewModel: CartViewModel
@@ -92,27 +103,30 @@ class CartViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        
         mockApplication = mockk(relaxed = true)
         mockAuthViewModel = mockk(relaxed = true)
         mockPreferencesManager = mockk(relaxed = true)
         mockCartRepository = mockk(relaxed = true)
         
-        
         every { mockAuthViewModel.shouldReloadCart } returns MutableStateFlow(0)
         every { mockAuthViewModel.currentUser } returns MutableStateFlow(sampleUser)
-        
         
         coEvery { mockPreferencesManager.getAuthToken() } returns sampleToken
         
         mockkConstructor(PreferencesManager::class)
+        coEvery { anyConstructed<PreferencesManager>().getAuthToken() } returns sampleToken
+        
         mockkConstructor(CartRepository::class)
+        coEvery { anyConstructed<CartRepository>().getCart(any()) } returns Result.success(emptyList())
+        coEvery { anyConstructed<CartRepository>().addItem(any(), any(), any()) } returns Result.success(emptyList())
+        coEvery { anyConstructed<CartRepository>().updateQuantity(any(), any(), any()) } returns Result.success(emptyList())
+        coEvery { anyConstructed<CartRepository>().removeItem(any(), any()) } returns Result.success(emptyList())
+        coEvery { anyConstructed<CartRepository>().clear(any()) } returns Result.success(Unit)
     }
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
+
         unmockkAll()
     }
 

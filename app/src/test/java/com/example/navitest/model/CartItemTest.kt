@@ -2,8 +2,9 @@ package com.example.navitest.model
 
 import org.junit.Test
 import org.junit.Assert.*
- 
-class CartItemTest {
+
+class
+CartItemTest {
 
     @Test
     fun `hasActiveDiscount es true cuando hay descuento valido`() {

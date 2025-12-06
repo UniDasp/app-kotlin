@@ -13,7 +13,8 @@ import retrofit2.Response
 
  
 @OptIn(ExperimentalCoroutinesApi::class)
-class AuthRepositoryTest {
+class
+AuthRepositoryTest {
 
     private lateinit var repository: AuthRepository
     private lateinit var mockApiService: ApiService

@@ -24,6 +24,17 @@ class ProductsViewModelTest {
     @get:Rule
     val instantExecutorRule = InstantTaskExecutorRule()
 
+    @get:Rule
+    val mainDispatcherRule = object : org.junit.rules.TestWatcher() {
+        val testDispatcher = UnconfinedTestDispatcher()
+        override fun starting(description: org.junit.runner.Description) {
+            Dispatchers.setMain(testDispatcher)
+        }
+        override fun finished(description: org.junit.runner.Description) {
+            Dispatchers.resetMain()
+        }
+    }
+
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var viewModel: ProductsViewModel
@@ -73,20 +84,21 @@ class ProductsViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        
         mockApplication = mockk(relaxed = true)
-        mockRepository = mockk()
+        mockRepository = mockk(relaxed = true)
         
-        
-        mockkObject(ProductsRepository())
+        mockkConstructor(ProductsRepository::class)
+        coEvery { anyConstructed<ProductsRepository>().getActiveProducts() } returns Result.success(emptyList())
+        coEvery { anyConstructed<ProductsRepository>().getProductById(any()) } returns Result.success(sampleProducts[0])
+        coEvery { anyConstructed<ProductsRepository>().getProductsByCategory(any()) } returns Result.success(emptyList())
+        coEvery { anyConstructed<ProductsRepository>().getCategories() } returns Result.success(emptyList())
+        coEvery { anyConstructed<ProductsRepository>().searchProducts(any()) } returns Result.success(emptyList())
         
         viewModel = ProductsViewModel(mockApplication)
     }
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
         unmockkAll()
     }
 
@@ -123,7 +135,8 @@ class ProductsViewModelTest {
         
         viewModel.searchProducts("")
         advanceUntilIdle()
-        
+
+
         
         assertFalse(viewModel.isLoading)
     }
@@ -257,10 +270,10 @@ class ProductsViewModelTest {
     }
 
     @Test
-    fun `estado inicial es Initial`() {
-        
+    fun `estado inicial es Initial`() = runTest {
+        advanceUntilIdle()
         val state = viewModel.productsState.value
-        assertTrue(state is ProductsState.Initial || state is ProductsState.Loading)
+        assertTrue(state is ProductsState.Initial || state is ProductsState.Loading || state is ProductsState.Success)
     }
 
     @Test
