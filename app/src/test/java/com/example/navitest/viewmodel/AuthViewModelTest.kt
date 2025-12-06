@@ -1,13 +1,10 @@
 package com.example.navitest.viewmodel
-
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import app.cash.turbine.test
 import com.example.navitest.api.AuthRepository
 import com.example.navitest.api.LoginResponse
-import com.example.navitest.api.MessageResponse
 import com.example.navitest.api.NotificationRepository
 import com.example.navitest.api.RegisterResponse
 import com.example.navitest.model.User
@@ -15,7 +12,6 @@ import com.example.navitest.utils.PreferencesManager
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Before
@@ -121,18 +117,33 @@ class AuthViewModelTest {
 
     @Test
     fun `register exitoso retorna true en callback`() = runTest {
-        
         val registerResponse = RegisterResponse(
-            id = 1,
-            username = "newuser",
-            email = "new@example.com"
+            token = sampleToken,
+            user = sampleUser
         )
         
-        viewModel = AuthViewModel(mockApplication)
-        
+        val mockAuthRepository = mockk<AuthRepository>()
+        coEvery {
+            mockAuthRepository.register(
+                username = "newuser",
+                password = "password123",
+                email = "new@example.com",
+                firstName = "New",
+                lastName = "User",
+                phone = null,
+                address = null,
+                region = null
+            )
+        } returns Result.success(registerResponse)
+
+        viewModel = AuthViewModel(
+            application = mockApplication,
+            authRepository = mockAuthRepository,
+            notificationRepository = mockk(relaxed = true),
+            preferencesManager = mockPreferencesManager
+        )
+
         var result = false
-        
-        
         viewModel.register(
             username = "newuser",
             password = "password123",
@@ -142,8 +153,8 @@ class AuthViewModelTest {
             onResult = { success -> result = success }
         )
         advanceUntilIdle()
-        
-        
+
+        assertTrue(result)
         assertFalse(viewModel.isLoading)
     }
 

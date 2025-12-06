@@ -26,10 +26,12 @@ sealed class AuthState {
     data class Error(val message: String) : AuthState()
 }
 
-class AuthViewModel(application: Application) : AndroidViewModel(application) {
-    private val authRepository = AuthRepository()
-    private val notificationRepository = NotificationRepository()
-    private val preferencesManager = PreferencesManager(application)
+class AuthViewModel(
+    application: Application,
+    val authRepository: AuthRepository = AuthRepository(),
+    val notificationRepository: NotificationRepository = NotificationRepository(),
+    val preferencesManager: PreferencesManager = PreferencesManager(application)
+) : AndroidViewModel(application) {
     private val context = application.applicationContext
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)

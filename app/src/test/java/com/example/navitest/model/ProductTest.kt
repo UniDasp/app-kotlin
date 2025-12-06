@@ -323,7 +323,9 @@ class ProductTest {
         assertEquals(5, product.activeDealId)
         assertEquals("Black Friday", product.activeDealName)
         assertTrue(product.hasActiveDiscount)
-        assertEquals(50000.0, product.finalPrice, 0.01)
-        assertEquals(10000.0, product.savings, 0.01)
+        assertNotNull(product.finalPrice)
+        assertEquals(50000.0, product.finalPrice!!, 0.01)
+        assertNotNull(product.savings)
+        assertEquals(10000.0, product.savings!!, 0.01)
     }
 }

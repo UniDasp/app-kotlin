@@ -2,7 +2,6 @@ package com.example.navitest.viewmodel
 
 import android.app.Application
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import app.cash.turbine.test
 import com.example.navitest.api.CartRepository
 import com.example.navitest.model.CartItem
 import com.example.navitest.model.Product
@@ -39,11 +38,11 @@ class CartViewModelTest {
     private val sampleToken = "Bearer sample.jwt.token"
     
     private val sampleUser = User(
-        id = 1,
-        username = "testuser",
-        nombre = "Test",
+        id = 2,
+        username = "user",
+        nombre = "Regular",
         apellido = "User",
-        email = "test@example.com"
+        email = "user@gmail.com"
     )
     
     private val sampleStudentUser = User(
@@ -56,27 +55,27 @@ class CartViewModelTest {
 
     private val sampleCartItems = listOf(
         CartItem(
-            itemId = "item1",
+            itemId = "MG001",
             id = 1,
             productId = 1,
-            name = "PlayStation 5",
-            image = "ps5.jpg",
-            price = 500000.0,
+            name = "Mouse Gamer Logitech G502 HERO",
+            image = "https://i.imgur.com/FlI4DDD.jpeg",
+            price = 49990.0,
             quantity = 1,
-            stock = 10,
-            originalPrice = 550000.0,
-            discountedPrice = 500000.0,
-            discountPercentage = 9.09
+            stock = 300,
+            originalPrice = 49990.0,
+            discountedPrice = null,
+            discountPercentage = null
         ),
         CartItem(
-            itemId = "item2",
+            itemId = "AC001",
             id = 2,
             productId = 2,
-            name = "Xbox Series X",
-            image = "xbox.jpg",
-            price = 450000.0,
+            name = "Auriculares Gamer HyperX Cloud II",
+            image = "https://i.imgur.com/NB1Ulfk.png",
+            price = 80000.0,
             quantity = 2,
-            stock = 5
+            stock = 297
         )
     )
 

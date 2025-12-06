@@ -272,7 +272,8 @@ class ProductsRepositoryTest {
         assertNotNull(product)
         assertEquals(sampleProductDto.id, product?.id)
         assertEquals(sampleProductDto.name, product?.name)
-        assertEquals(sampleProductDto.price, product?.price, 0.01)
+        assertNotNull(product?.price)
+        assertEquals(sampleProductDto.price, product?.price!!, 0.01)
         assertEquals(sampleProductDto.stock, product?.stock)
     }
 
